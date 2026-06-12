@@ -33,6 +33,44 @@ export interface AllAuditReports {
   all_reports: AuditReport[];
 }
 
+export interface GraphNode {
+  id: string;
+  type: string;
+  label: string;
+  position?: { x: number; y: number };
+  risk_score?: number;
+  flagged?: number;
+  city?: string;
+  value?: number;
+  engine_cc?: number;
+  model_year?: number;
+  address?: string;
+  monthly_bill?: number;
+  destination?: string;
+  ticket_price?: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  animated: boolean;
+  style?: any;
+}
+
+export interface GraphNetworkData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface AIAuditExplanation {
+  cnic: string;
+  name: string;
+  tax_deviation_score: number;
+  explanation: string;
+}
+
 export const apiService = {
   // Get dashboard summary stats
   async getSummary(): Promise<Summary> {
@@ -59,6 +97,20 @@ export const apiService = {
   async getAuditReports(limit: number = 10): Promise<AllAuditReports> {
     const response = await fetch(`${API_URL}/audit/ai/all-profiles?limit=${limit}`);
     if (!response.ok) throw new Error("Failed to fetch audit reports");
+    return response.json();
+  },
+
+  // Get real Neo4j network for a taxpayer
+  async getGraphNetwork(cnic: string): Promise<GraphNetworkData> {
+    const response = await fetch(`${API_URL}/graph/network?cnic=${encodeURIComponent(cnic)}`);
+    if (!response.ok) throw new Error("Failed to fetch network graph");
+    return response.json();
+  },
+
+  // Get dynamic AI audit trail explanation
+  async getAIAuditExplanation(cnic: string): Promise<AIAuditExplanation> {
+    const response = await fetch(`${API_URL}/audit/ai/explain?cnic=${encodeURIComponent(cnic)}`);
+    if (!response.ok) throw new Error("Failed to fetch AI audit explanation");
     return response.json();
   },
 };

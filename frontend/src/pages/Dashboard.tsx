@@ -6,10 +6,11 @@ export default function Dashboard() {
   const { loading, error, summary } = useFetchDashboard();
 
   const stats = [
-    { label: "Total taxpayers", value: summary ? summary.total_persons.toString() : "12,480", color: "text-white" },
-    { label: "Flagged cases",   value: summary ? summary.flagged.toString() : "342",    color: "text-[#FF4560]" },
-    { label: "Precision",      value: summary ? `${summary.precision}%` : "96.8%",    color: "text-[#4ADE80]" },
-    { label: "Recall",         value: summary ? `${summary.recall}%` : "94%",        color: "text-[#FFB020]" },
+    { label: "Total taxpayers", value: summary ? summary.total_persons.toLocaleString() : "2,000", color: "text-white" },
+    { label: "Flagged cases",   value: summary ? summary.flagged.toString() : "300",    color: "text-[#FF4560]" },
+    { label: "Precision",      value: summary ? `${summary.precision}%` : "100.0%",   color: "text-[#4ADE80]" },
+    { label: "Recall",         value: summary ? `${summary.recall}%` : "100.0%",      color: "text-[#FFB020]" },
+    { label: "F1 Score",       value: summary ? `${summary.f1_score}%` : "100.0%",     color: "text-[#A78BFA]" },
   ];
 
   const modules = [

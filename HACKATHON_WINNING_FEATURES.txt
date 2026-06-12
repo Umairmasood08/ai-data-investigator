@@ -1,0 +1,62 @@
+🏆 Hackathon-Winning Feature List for "Graph AI for Broadening the National Tax Net"
+Theme: FinTech, Knowledge Graphs, Fraud Detection, Explainable AI (XAI)
+
+This document outlines the core winning features that we will implement to elevate our Tax Compliance & Fraud Detection system to an enterprise-grade solution.
+
+---
+
+### 1. Robust Entity Resolution & Identity Consolidation (Noisy Data Linking)
+*   **Multi-Attribute Identity Resolution (ER):** Match records using fuzzy string comparison (Jaro-Winkler) across multiple fields: Name, Father's Name, normalized Date of Birth (standardizing serial Excel dates and string formats), Phone, and City.
+*   **Urdu/English Phonetic Normalization & Transliteration:** Build a transliteration helper that maps common names in Urdu (e.g. `محمد علی`) to their English equivalent (`Muhammad Ali`). Use phonetic algorithms (Double Metaphone) to link spelling variations (e.g. `Hamza Mehmood` and `Hamza Mahmood`) and abbreviations (e.g. `S. Ali` vs `Salman Ali`).
+*   **Canonical Profile Consolidation:** Map raw transactions across siloes (vehicle registration, properties, travel logs, utility accounts) to a consolidated canonical profile. If two CNICs represent the same person, aggregate their total assets and incomes to evaluate tax liability on their combined wealth.
+
+---
+
+### 2. Network-Aware Anomaly Detection (Graph AI Engine)
+*   **Graph Centrality & Structural Features:** Construct a unified Python-based network graph (using NetworkX or GNN-style features) representing the relationships between taxpayers, properties, vehicles, and utility accounts.
+*   **Network Risk Factors:** Compute network metrics:
+    *   *Shared Address Density:* The number of taxpayers sharing a single physical address.
+    *   *Community Non-Filer Ratio:* Detect communities (clusters sharing addresses/assets) where high-value assets are associated with zero tax filings.
+    *   *Degree Centrality:* High resource flow nodes (individuals owning multiple registered properties/vehicles).
+*   **Tabular + Graph Anomaly Models:** Feed structural network features together with tabular features (lifestyle discrepancy, income-to-asset ratio) into an Isolation Forest model to produce `ml_anomaly_score` and the final `tax_deviation_score`.
+
+---
+
+### 3. Real Knowledge Graph Integration (Neo4j Backend Connection)
+*   **Live Graph Query API:** Add a `/graph/network?cnic={cnic}` endpoint in FastAPI that queries Neo4j for the target taxpayer's sub-graph (up to 3 hops).
+*   **Rich Relationship Schemas:** Model relationships:
+    *   `OWNS_VEHICLE` (with properties: model_year, engine_cc, vehicle_make)
+    *   `OWNS_PROPERTY` (with properties: estimated_value_pkr, area_sqft, location)
+    *   `CONSUMES_UTILITY` (with properties: avg_monthly_bill_pkr)
+    *   `TRAVELS` (with properties: destination, travel_class, ticket_price_pkr)
+    *   `SHARES_ADDRESS` (connecting individuals registered at the same location)
+
+---
+
+### 4. Interactive Graph Visualization UI (React Flow)
+*   **Live Network Rendering:** Refactor `Graph.tsx` to pull live nodes and edges from the Neo4j API. Display real connections instead of mock data.
+*   **Dynamic Visual Styling:**
+    *   Color-code nodes by type: Person (Red/Green based on risk), Vehicle (Blue), Property (Yellow), Utility (Orange), Travel (Purple).
+    *   Animate edges to show direction and value of connection flows.
+*   **Auditor Control Center:**
+    *   Search/Lookup: Quickly search other CNICs or Names directly from the graph view.
+    *   Filter Panel: Toggle visibility of specific node/edge types (e.g. hide utilities to focus on real estate connections).
+    *   Interactive Node Expansion: Double-click nodes to query and display their direct neighbors.
+
+---
+
+### 5. Explainable AI (XAI) & Detailed Audit Justifications
+*   **LLM-Powered Audit Explanations:** Build a `/audit/ai/explain?cnic={cnic}` endpoint. Ground the LLM (Groq Llama-3.3-70b) in the specific taxpayer's asset details and network connections to output a structured, professional 4-paragraph audit trail covering:
+    *   *Financial Summary:* Discrepancy between declared income and lifestyle indicators.
+    *   *Network Analysis:* Risk factors from shared addresses or linked entities.
+    *   *Evidence Breakdown:* Detailed list of high-value properties, CC vehicles, and flights.
+    *   *Auditor Recommendation:* Specific next-step recommendations for audits.
+*   **Audit Sidebar Panel:** Render the dynamic AI explanation directly inside the `Investigation` page with markdown formatting and a loading indicator.
+
+---
+
+### 6. Agency-Grade PDF Report Export
+*   **Auditor Report Generator:** Refactor `downloadAuditReport` to compile a beautiful, professional audit report:
+    *   *Official Styling:* Official FBR-inspired letterhead, watermark, and footer.
+    *   *Structured Layout:* Scorecards displaying anomaly and risk ratings, tabular presentation of assets, and formatted AI text sections.
+    *   *Official Sign-off:* Signature section for the FBR tax inspector.
