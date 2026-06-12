@@ -1,12 +1,22 @@
-import { useParams } from "react-router-dom";
-import { taxpayers } from "../data/mock";
+import { useNavigate, useParams } from "react-router-dom";
+import { useFetchFlaggedCases } from "../hooks/useFetchData";
 import { useGraphStore } from "../store/useGraphStore";
 
 export default function Investigation() {
+  const nav = useNavigate();
   const { id } = useParams();
-  const user = taxpayers.find((t) => t.id === id);
+  const { loading, error, flaggedEntities } = useFetchFlaggedCases();
+  const user = flaggedEntities.find(
+    (t) => t.cnic === id || t.full_name === id || t.cnic === decodeURIComponent(id || "")
+  );
 
   const selectedNode = useGraphStore((s) => s.selectedNode);
+
+  if (loading)
+    return <div style={{ color: "white" }}>Loading investigation...</div>;
+
+  if (error)
+    return <div style={{ color: "#FF4560" }}>Error: {error}</div>;
 
   if (!user)
     return (
@@ -104,7 +114,11 @@ export default function Investigation() {
               color: "#4ADE80",
             }}
           >
-            {user.score}
+            {user.ml_anomaly_score >= 80
+              ? "High Risk"
+              : user.ml_anomaly_score >= 50
+              ? "Moderate Risk"
+              : "Low Risk"}
           </div>
         </div>
 
@@ -117,10 +131,12 @@ export default function Investigation() {
             color: "white",
           }}
         >
-          <p><b>Name:</b> {user.name}</p>
+          <p><b>Name:</b> {user.full_name || "Unknown"}</p>
           <p><b>CNIC:</b> {user.cnic}</p>
-          <p><b>Declared Income:</b> PKR {user.income.toLocaleString()}</p>
-          <p><b>Estimated Assets:</b> PKR {user.assets.toLocaleString()}</p>
+          <p><b>City:</b> {user.city || "Unknown"}</p>
+          <p><b>Tax Deviation Score:</b> {user.tax_deviation_score ?? "-"}</p>
+          <p><b>AI Anomaly Score:</b> {user.ml_anomaly_score ?? "-"}</p>
+          <p><b>Assets Summary:</b> {user.audit_trail || "No asset summary available"}</p>
         </div>
 
         {/* AI Explanation */}
@@ -170,18 +186,19 @@ export default function Investigation() {
           >
             Open Audit
           </button>
-
           <button
+            onClick={() => nav(`/graph?cnic=${encodeURIComponent(user.cnic)}`)}
             style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: "white",
+              background: "#4ADE80",
+              border: "none",
+              color: "#07100A",
               padding: "12px 20px",
               borderRadius: "8px",
+              fontWeight: 600,
               cursor: "pointer",
             }}
           >
-            Mark For Review
+            Open Knowledge Graph
           </button>
         </div>
       </div>
@@ -229,11 +246,10 @@ export default function Investigation() {
           }}
         >
           {[
-            `👤 ${user.name}`,
-            "🚗 Toyota Prado",
-            "🏠 DHA Phase 6 House",
-            "✈ Dubai Travel Activity",
-            "⚡ High Utility Consumption",
+            `👤 ${user.full_name || "Unknown"}`,
+            user.audit_trail
+              ? `🔍 Asset details: ${user.audit_trail}`
+              : "No asset history available",
           ].map((item) => (
             <div
               key={item}

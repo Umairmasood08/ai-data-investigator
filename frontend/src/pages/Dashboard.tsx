@@ -1,13 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import { useFetchDashboard } from "../hooks/useFetchData";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { loading, error, summary } = useFetchDashboard();
 
   const stats = [
-    { label: "Total taxpayers", value: "12,480", color: "text-white" },
-    { label: "Flagged cases",   value: "342",    color: "text-[#FF4560]" },
-    { label: "AI confidence",   value: "96.8%",  color: "text-[#4ADE80]" },
-    { label: "Active probes",   value: "94",     color: "text-[#FFB020]" },
+    { label: "Total taxpayers", value: summary ? summary.total_persons.toString() : "12,480", color: "text-white" },
+    { label: "Flagged cases",   value: summary ? summary.flagged.toString() : "342",    color: "text-[#FF4560]" },
+    { label: "Precision",      value: summary ? `${summary.precision}%` : "96.8%",    color: "text-[#4ADE80]" },
+    { label: "Recall",         value: summary ? `${summary.recall}%` : "94%",        color: "text-[#FFB020]" },
   ];
 
   const modules = [
@@ -106,6 +108,16 @@ export default function Dashboard() {
           zIndex: 10,
         }}
       >
+        {loading && (
+          <div style={{ color: "#4ADE80", marginBottom: "24px" }}>
+            Loading dashboard data...
+          </div>
+        )}
+        {error && (
+          <div style={{ color: "#FF4560", marginBottom: "24px" }}>
+            Error: {error}
+          </div>
+        )}
         {/* Eyebrow badge */}
         <div
           style={{

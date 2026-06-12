@@ -17,6 +17,7 @@ export interface FlaggedEntity {
   ml_anomaly_score: number;
   tax_deviation_score: number;
   flagged: number;
+  audit_trail?: string;
 }
 
 export interface AuditReport {

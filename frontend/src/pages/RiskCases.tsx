@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { taxpayers } from "../data/mock";
+import { useFetchFlaggedCases } from "../hooks/useFetchData";
 
 export default function RiskCases() {
   const nav = useNavigate();
+  const { loading, error, flaggedEntities } = useFetchFlaggedCases();
 
   return (
     <div style={{ position: "relative" }}>
@@ -72,9 +73,14 @@ export default function RiskCases() {
           gap: "16px",
         }}
       >
-        {taxpayers.map((t) => (
+        {loading && <div style={{ color: "#fff" }}>Loading cases...</div>}
+        {error && <div style={{ color: "#FF4560" }}>Error: {error}</div>}
+        {!loading && !error && flaggedEntities.length === 0 && (
+          <div style={{ color: "#fff" }}>No flagged cases found.</div>
+        )}
+        {flaggedEntities.map((t) => (
           <div
-            key={t.id}
+            key={t.cnic}
             style={{
               background: "#0C1A0F",
               border: "1px solid rgba(74,222,128,0.12)",
@@ -115,7 +121,7 @@ export default function RiskCases() {
                     fontWeight: 600,
                   }}
                 >
-                  {t.name}
+                  {t.full_name || "Unknown"}
                 </h3>
 
                 <span
@@ -142,6 +148,15 @@ export default function RiskCases() {
               >
                 CNIC: {t.cnic}
               </p>
+              <p
+                style={{
+                  color: "rgba(255,255,255,0.45)",
+                  margin: "6px 0 0",
+                  fontSize: "14px",
+                }}
+              >
+                City: {t.city || "Unknown"}
+              </p>
             </div>
 
             {/* Right */}
@@ -162,7 +177,7 @@ export default function RiskCases() {
                     textTransform: "uppercase",
                   }}
                 >
-                  AI Risk Score
+                  Tax Deviation Score
                 </p>
 
                 <p
@@ -173,12 +188,21 @@ export default function RiskCases() {
                     margin: "4px 0 0",
                   }}
                 >
-                  96%
+                  {t.tax_deviation_score ?? "-"}
+                </p>
+                <p
+                  style={{
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: "12px",
+                    margin: "6px 0 0",
+                  }}
+                >
+                  AI Score: {t.ml_anomaly_score ?? "-"}
                 </p>
               </div>
 
               <button
-                onClick={() => nav(`/investigation/${t.id}`)}
+                onClick={() => nav(`/investigation/${encodeURIComponent(t.cnic)}`)}
                 style={{
                   background: "#4ADE80",
                   color: "#07100A",
