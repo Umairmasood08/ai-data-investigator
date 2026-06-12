@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useFetchFlaggedCases } from "../hooks/useFetchData";
 import { useGraphStore } from "../store/useGraphStore";
+import { jsPDF } from "jspdf";
 
 export default function Investigation() {
   const nav = useNavigate();
@@ -12,6 +13,135 @@ export default function Investigation() {
 
   const selectedNode = useGraphStore((s) => s.selectedNode);
 
+  const parseAuditTrail = (trail?: string) => {
+    if (!trail) return [];
+    return trail
+      .split(/;|\n|\r|\|/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
+const downloadAuditReport = () => {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 50;
+  let y = 60;
+
+  const checkPage = (extra = 20) => {
+    if (y + extra > 740) {
+      doc.addPage();
+      y = 60;
+    }
+  };
+
+  const title = (text: string) => {
+    checkPage(40);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(20, 20, 20);
+    doc.text(text, margin, y);
+    y += 28;
+
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, y);
+    y += 22;
+
+    doc.setDrawColor(74, 222, 128);
+    doc.setLineWidth(1.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 28;
+  };
+
+  const section = (text: string) => {
+    checkPage(30);
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(15, 15, 15);
+    doc.text(text, margin, y);
+    y += 20;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 18;
+  };
+
+  const text = (value: string, options: { size?: number; color?: [number, number, number] } = {}) => {
+    checkPage(20);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(options.size ?? 11);
+    doc.setTextColor(...(options.color ?? [80, 80, 80]));
+
+    const lines = doc.splitTextToSize(value, pageWidth - margin * 2);
+    doc.text(lines, margin, y);
+    y += lines.length * 16;
+  };
+
+  const bulletList = (items: string[]) => {
+    items.forEach((item) => {
+      checkPage(24);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(60, 60, 60);
+
+      const lines = doc.splitTextToSize(item, pageWidth - margin * 2 - 15);
+      doc.text(`• ${lines[0]}`, margin, y);
+      y += 16;
+
+      for (let i = 1; i < lines.length; i++) {
+        doc.text(`  ${lines[i]}`, margin + 10, y);
+        y += 16;
+      }
+
+      y += 4;
+    });
+  };
+
+  const trailLines = parseAuditTrail(user?.audit_trail);
+
+  title("AUDIT REPORT");
+
+  section("Taxpayer Summary");
+  text(`Name: ${user?.full_name || "Unknown"}`, { size: 12 });
+  text(`CNIC: ${user?.cnic}`, { size: 12 });
+  text(`City: ${user?.city || "Unknown"}`, { size: 12 });
+  text(`AI Anomaly Score: ${user?.ml_anomaly_score ?? "-"}`, { size: 12 });
+  text(`Tax Deviation Score: ${user?.tax_deviation_score ?? "-"}`, { size: 12 });
+  text(
+    `Flagged Status: ${
+      user?.flagged === 1 ? "Flagged for review" : "Normal"
+    }`,
+    { size: 12 }
+  );
+
+  section("Asset & Audit Trail Details");
+  if (trailLines.length > 0) {
+    bulletList(trailLines);
+  } else {
+    text("No asset summary available.");
+  }
+
+  section("Investigation Notes");
+  text(
+    "The taxpayer profile is associated with significant asset declarations that are inconsistent with reported income. " +
+      "This report highlights key findings and supports further review by audit and compliance teams.",
+    { size: 12 }
+  );
+
+  text(
+    "Recommended actions: verify source-of-funds for high-value assets, compare declared income to bank and utility consumption records, " +
+      "and validate foreign travel expenditures against tax filings.",
+    { size: 12 }
+  );
+
+  const fileName = `${(user?.full_name || "audit_report").replace(/\s+/g, "_")}_${
+    user?.cnic || "profile"
+  }.pdf`;
+  doc.save(fileName);
+};
   if (loading)
     return <div style={{ color: "white" }}>Loading investigation...</div>;
 
@@ -174,6 +304,7 @@ export default function Investigation() {
           }}
         >
           <button
+            onClick={downloadAuditReport}
             style={{
               background: "#4ADE80",
               border: "none",
