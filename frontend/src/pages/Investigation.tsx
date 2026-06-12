@@ -184,7 +184,7 @@ export default function Investigation() {
               cursor: "pointer",
             }}
           >
-            Open Audit
+            Download Audit Report
           </button>
           <button
             onClick={() => nav(`/graph?cnic=${encodeURIComponent(user.cnic)}`)}
